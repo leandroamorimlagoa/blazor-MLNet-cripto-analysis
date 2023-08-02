@@ -52,6 +52,6 @@ The application will only do a new investment when the previous cycle is finishe
 1. Access the application in the browser at the address: `https://localhost:5001`
 
 # Credits
-Developer: Leandro Amorim Lagoa 
-Email: leamorim@outlook.com
-Linkeding: https://www.linkedin.com/in/leandrolagoa/
+Developer: Leandro Amorim Lagoa  
+Email: leamorim@outlook.com  
+Linkedin: https://www.linkedin.com/in/leandrolagoa/
