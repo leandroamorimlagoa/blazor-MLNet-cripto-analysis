@@ -1,0 +1,40 @@
+﻿@inject HttpClient Http
+@inject AbstractLagoaTradingAuthStateProvider authStateProvider
+
+@foreach (var item in lastPositions)
+{
+    <div class="col-sm-3">
+        <div class="card @(item.Side == Side.Buy ? "position-side-buy":"position-side-sell")">
+            <div class="card-body">
+                <h5 class="card-title">@item.Symbol (@item.Side.ToString())</h5>
+                <p class="card-text">
+                    Valor Pretendido: @item.Price.ToString(ConstantNames.DefaultMasks.CryptoyCurrency) <br />
+                    Quantidade: @item.QuantityExecuted.ToString(ConstantNames.DefaultMasks.CryptoyCurrency)<br />
+                    Valor Total: @item.Total.ToString(ConstantNames.DefaultMasks.CryptoyCurrency)<br />
+                    <span style="float:left;">Criado em:  @item.CreatedAt.ToString(ConstantNames.DefaultMasks.DateTime)</span>
+                    <strong style="float:right;">@item.State.ToString()</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private List<UserPositionsResponse> lastPositions = new List<UserPositionsResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hash = await authStateProvider.GetUserHash();
+        var url = ConstantNames.ApiRoutes.UserPositions;
+        var query = new UserPositionsRequest(hash) { State = null, Take = 4 };
+        var queryString = UITool.GetQueryString(query);
+        var fullUrl = $"{url}?{queryString}";
+        var result = await Http.GetAsync(fullUrl);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            lastPositions = JsonConvert.DeserializeObject<List<UserPositionsResponse>>(content);
+        }
+    }
+}

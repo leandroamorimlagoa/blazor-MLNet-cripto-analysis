@@ -1,0 +1,76 @@
+﻿@page "/invite-friend"
+
+<PageTitle>Invite a Friend</PageTitle>
+<h3>Invite a Friend</h3>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <hr />
+        <div class="form-group">
+            <label for="txtNomeAmigo">Nome do Amigo</label>
+            <input type="text" class="form-control" id="txtNomeAmigo" placeholder="Digite o nome do amigo" @bind="inviteUser.Name">
+        </div>
+        <div class="form-group">
+            <label for="txtEmailAmigo">Email do Amigo</label>
+            <input type="email" class="form-control" id="txtEmailAmigo" placeholder="Digite o email do amigo" @bind="inviteUser.Email">
+        </div>
+        <button type="button" class="btn btn-primary" @onclick="EnviarConvite">Enviar Convite</button>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h4>Convites Enviados</h4>
+        <hr />
+        @if (InvitesList != null && InvitesList.Any())
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nome do Amigo</th>
+                        <th>Email</th>
+                        <th>Situação</th>
+                        <th>Cadastrado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invite in InvitesList)
+                    {
+                        <tr>
+                            <td><span>@invite.Name</span></td>
+                            <td>@invite.Email</td>
+                            <td>@invite.Status</td>
+                            <td>@invite.SignedIn.ToShortDateString()</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>Não há convites enviados</p>
+        }
+    </div>
+</div>
+
+@code {
+    private List<InviteUser> InvitesList = new List<InviteUser>();
+    private InviteUser inviteUser = new InviteUser();
+
+    // Método que será chamado ao clicar no botão "Enviar Convite"
+    private void EnviarConvite()
+    {
+        // Cria um novo objeto de convite com os valores
+        var novoConvite = new InviteUser
+            {
+                Name = inviteUser.Name,
+                Email = inviteUser.Email,
+                Status = "Enviado",
+                SignedIn = DateTime.Now
+            };
+
+        // Adiciona o novo convite na lista de convites
+        InvitesList.Add(novoConvite);
+        StateHasChanged();
+        inviteUser = new InviteUser();
+    }
+}

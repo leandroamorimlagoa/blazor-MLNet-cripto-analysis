@@ -1,0 +1,31 @@
+﻿@page "/dashboard"
+
+<PageTitle>Dashboard</PageTitle>
+<h3>Dashboard</h3>
+<h2>Lucro acumulado - R$ 23,90</h2>
+
+<div class="container-fluid">
+    <div class="row my-3">
+        <DashboardLastsPositions></DashboardLastsPositions>
+    </div>
+    <div class="row my-3">
+        <div class="col-6">
+            <DashboardLineChart></DashboardLineChart>
+        </div>
+        <DashboardAccount></DashboardAccount>
+        <DashboardOpenedPositions></DashboardOpenedPositions>
+    </div>
+    <div class="row mt-3">
+        <DashboardCircuitHistory></DashboardCircuitHistory>
+    </div>
+</div>
+@code {
+    private DateTime IntervaloDataInicio = DateTime.Now;
+    private DateTime IntervaloDataFim = DateTime.Now;
+    private List<CircuitResponse> FinishedCycles = new List<CircuitResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+}

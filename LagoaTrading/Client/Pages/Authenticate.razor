@@ -1,0 +1,94 @@
+﻿@page "/"
+@page "/authenticate"
+@inject NavigationManager navigationManager
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject AbstractLagoaTradingAuthStateProvider authStateProvider
+@layout PublicLayout
+
+<PageTitle>Bom ver você por aqui!</PageTitle>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-5" hidden="@(hideError)">
+            <div class="alert alert-danger" role="alert">
+                <strong>@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")</strong> <br />
+                <span>Usuário ou senha inválidos</span>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-8 col-sm-10">
+            <div class="card text-center shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title">Autenticação</h4>
+                </div>
+                <div class="card-body text-start">
+                    <div class="form-group my-3">
+                        <label for="inputEmail">Email</label>
+                        <input type="email" class="form-control" id="inputEmail" placeholder="Digite seu email" required @bind="Email">
+                    </div>
+                    <div class="form-group my-3">
+                        <label for="inputPassword">Senha</label>
+                        <input type="password" class="form-control" id="inputPassword" placeholder="Digite sua senha" required @bind="Password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" @onclick="HandleValidSubmit">Entrar</button>
+                </div>
+                <div class="card-footer text-center">
+                    <p class="">Esqueceu sua senha? <a href="@ConstantNames.Routes.ForgotPassword">Clique aqui</a></p>
+                    <p class="">Ainda não tem uma conta? <a href="@ConstantNames.Routes.RegisterUser">Registre-se aqui</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    private bool hideError = true;
+    private string Email { get; set; }
+    private string Password { get; set; }
+
+    private async Task HandleValidSubmit()
+    {
+        var emailHash = CryptoHelper.Create256(Email);
+        var password = CryptoHelper.Create256(Password);
+        var requestModel = new AuthenticateUserRequest(emailHash, password);
+        var response = await Http.PostAsJsonAsync(ConstantNames.ApiRoutes.AuthenticateUser, requestModel);
+
+        AuthorizationResponse authorization = default;
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            authorization = JsonConvert.DeserializeObject<AuthorizationResponse>(content);
+        }
+        else
+        {
+            hideError = false;
+
+        }
+
+        if (response.IsSuccessStatusCode && authorization != default)
+        {
+            await localStorage.SetItemAsync<AuthorizationResponse>(ConstantNames.LocalStoreNames.AuthenticationToken, authorization);
+            StateHasChanged();
+            await Task.Delay(100);
+            navigationManager.NavigateTo(ConstantNames.Routes.Dashboard);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var isAuthenticated = await authStateProvider.IsAuthenticated();
+        if (isAuthenticated)
+        {
+            //await Task.Delay(100);
+            navigationManager.NavigateTo(ConstantNames.Routes.Dashboard);
+        }
+        else
+        {
+            await localStorage.RemoveItemsAsync(new List<string> { ConstantNames.LocalStoreNames.AuthenticationToken });
+        }
+
+        await base.OnInitializedAsync();
+    }
+}

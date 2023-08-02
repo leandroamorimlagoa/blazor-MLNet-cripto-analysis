@@ -1,0 +1,52 @@
+﻿@inject HttpClient Http
+@inject AbstractLagoaTradingAuthStateProvider authStateProvider
+
+<div class="col-md-4">
+    <!-- Lista de posições abertas -->
+    <div class="card">
+        <div class="card-header">
+            Posições Abertas
+        </div>
+        <div class="card-body">
+            <span class="card-subtitle mb-2 text-muted" hidden="@(userPositions.Count() > 0)">Nenhuma posição aberta no momento</span>
+            <table class="table table-striped" hidden="@(userPositions.Count() == 0)">
+                <thead>
+                    <tr>
+                        <th>Moeda</th>
+                        <th>Quantidade</th>
+                        <th>Preço</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in userPositions)
+                    {
+                        <tr>
+                            <td>@item.Symbol (@item.Side.ToString())</td>
+                            <td>@item.QuantityExecuted.ToString(ConstantNames.DefaultMasks.CryptoyCurrency)</td>
+                            <td>@item.Price.ToString(ConstantNames.DefaultMasks.CryptoyCurrency)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<UserPositionsResponse> userPositions = new List<UserPositionsResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hash = await authStateProvider.GetUserHash();
+        var url = ConstantNames.ApiRoutes.UserPositions;
+        var query = new UserPositionsRequest(hash) { State = State.Active };
+        var queryString = UITool.GetQueryString(query);
+        var fullUrl = $"{url}?{queryString}";
+        var result = await Http.GetAsync(fullUrl);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            userPositions = JsonConvert.DeserializeObject<List<UserPositionsResponse>>(content);
+        }
+    }
+}

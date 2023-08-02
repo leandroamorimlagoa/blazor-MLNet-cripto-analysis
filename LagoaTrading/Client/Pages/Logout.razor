@@ -1,0 +1,19 @@
+﻿@page "/logout"
+@inject NavigationManager navigationManager
+@inject ILocalStorageService localStorage
+@layout PublicLayout
+
+<h3>Logout</h3>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var hasToken = await localStorage.ContainKeyAsync(ConstantNames.LocalStoreNames.AuthenticationToken);
+        if (hasToken)
+        {
+            await localStorage.RemoveItemAsync(ConstantNames.LocalStoreNames.AuthenticationToken);
+            await Task.Delay(100);
+        }
+        navigationManager.NavigateTo(ConstantNames.Routes.AuthenticateUser);
+    }
+}

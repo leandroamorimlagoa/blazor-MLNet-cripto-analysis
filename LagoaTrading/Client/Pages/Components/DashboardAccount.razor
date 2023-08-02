@@ -1,0 +1,47 @@
+﻿@inject HttpClient Http
+@inject AbstractLagoaTradingAuthStateProvider authStateProvider
+
+<div class="col-md-2">
+    <!-- Lista de moedas na carteira -->
+    <div class="card">
+        <div class="card-header">
+            Moedas na Carteira
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Moeda</th>
+                        <th>Quantidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var account in accounts)
+                    {
+                        <tr>
+                            <td>@account.Symbol.ToUpper()</td>
+                            <td>@account.Amount.ToString("### ##0.0000000000")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<UserAccountCurrency> accounts = new List<UserAccountCurrency>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hash = await authStateProvider.GetUserHash();
+        var url = ConstantNames.ApiRoutes.UserAccount.Replace(ConstantNames.Interpolation.Hash, hash);
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            accounts = JsonConvert.DeserializeObject<List<UserAccountCurrency>>(content);
+            accounts = accounts.Where(x => x.Amount > 0).OrderByDescending(x => x.Amount).ToList();
+        }
+    }
+}

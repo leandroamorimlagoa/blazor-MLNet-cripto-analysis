@@ -1,0 +1,258 @@
+﻿@page "/single-circuit"
+@inject HttpClient Http
+@inject AbstractLagoaTradingAuthStateProvider authStateProvider
+
+<PageTitle>Simulação de Circuito Único</PageTitle>
+<h3>Simulação de Circuito Único</h3>
+
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="alert alert-info">
+                O objetivo aqui é mostrar como é o funcionamento da ferramenta por meio da execução de um único circuito de investimentos (compra e venda). A operação real deverá ser iniciada no menu "Circuito Contínuo".<br />
+                <strong>Essa simulação não é uma garantia de retorno, mas sim uma estimativa aproximada. </strong>
+            </div>
+            <div class="alert alert-danger" hidden="@hideNoFunds">
+                <strong>Para simular, você deve possuir pelo menos R$ 1,00 ( um real ) disponível para investimento em sua conta. Caso este valor não esteja atualizado, vá a tela de parametro e clique no botão salvar para que seja atualizado. </strong>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xxl-3 col-lg-6 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Referências Iniciais</h5>
+                    <hr />
+
+                    <div class="form-group my-3">
+                        <label for="valorInvestido">Valor em Reais:</label>
+                        <InputNumber type="text" class="form-control" id="valorInvestido" @bind-Value="AbsoluteValue" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="criptomoeda">Criptomoeda:</label>
+                        <select id="criptomoeda" class="form-control" @onchange="ChangeSimulation">
+                            @foreach (var crypto in cryptoAnalysis)
+                            {
+                                <option value="@crypto.MarketId.ToString()">@crypto.Symbol.ToUpper() (@crypto.SumVolume.ToString("#,###,##0.000000"))</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="valorUnitario">Valor Unitário:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.UnitPrice" />
+                    </div>
+                    <div class="form-group my-3" hidden="@(lastUpdate.LastUpdated == DateTime.MinValue)">
+                        <label>Atualizado em: @lastUpdate.LastUpdated</label>
+                        <button type="button" class="btn btn-primary" @onclick="AtualizarIndices">Atualizar Índices</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xxl-3 col-lg-6 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Dados da Compra</h5>
+                    <hr />
+
+                    <div class="form-group my-3">
+                        <label for="UnitPriceToBuy">Valor Unitário:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.UnitPriceToBuy" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="QuantityToBuy">Quantidade:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.QuantityToBuy" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="TaxCryptoToBuy">Valor da Taxa (Criptomoeda):</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.TaxCryptoToBuy" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="TaxCurrencyToBuy">Valor da Taxa (Real):</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.TaxCurrencyToBuy" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="TotalCryptoToBuy">Valor Total em Criptomoeda:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.TotalCryptoToBuy" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xxl-3 col-lg-6 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Dados da Venda</h5>
+                    <hr />
+
+                    <div class="form-group my-3">
+                        <label for="UnitPriceToSell">Valor Unitário:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.UnitPriceToSell" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="QuantityToSell">Quantidade:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.QuantityToSell" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="TaxCryptoToSell">Valor da Taxa (Criptomoeda):</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.TaxCryptoToSell" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="TaxCurrencyToSell">Valor da Taxa (Real):</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.TaxCurrencyToSell" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="TotalToSell">Valor Total:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.TotalCurrencyToSell" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xxl-3 col-lg-6 mt-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Resumo do Circuito</h5>
+                    <hr />
+
+                    <div class="form-group my-3">
+                        <label for="InicialValue">Valor Inicial:</label>
+                        <InputNumber class="form-control" @bind-Value="simulation.InicialValue" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="FinalValue">Valor Total Recebido:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.FinalValue" />
+                    </div>
+
+                    <div class="form-group my-3">
+                        <label for="Result">Valor do Lucro:</label>
+                        <InputNumber class="form-control" readonly @bind-Value="simulation.Result" />
+                    </div>
+                </div>
+            </div>
+            <div class="card  my-3">
+                <button type="button" class="btn btn-primary" @onclick="IniciarCircuitoUnico">Iniciar Circuito Único</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private List<AnalysisResponse> cryptoAnalysis = new List<AnalysisResponse>();
+    private UserParameterRequest parameter = new UserParameterRequest();
+    private SimulationResponse simulation = new SimulationResponse();
+    private LastUpdateResponse lastUpdate = new LastUpdateResponse();
+    private Message message = new Message();
+    private bool hideNoFunds = true;
+    private string hashedUser = string.Empty;
+    private long SelectedMarket { get; set; } = 0;
+    private decimal AbsoluteValue { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hash = await authStateProvider.GetUserHash();
+        var key = CryptoHelper.CreateRandomKey();
+        hashedUser = CryptoHelper.Encrypt(hash, key) + key;
+
+        await LoadParameter();
+        hideNoFunds = parameter.AvaliableValue >= 1;
+        if (hideNoFunds)
+        {
+            await LoadAnalysis();
+            await LoadSimulation();
+            await LoadLastUpdate();
+        }
+    }
+
+    private async Task LoadParameter()
+    {
+        var url = ConstantNames.ApiRoutes.UserParameters.Replace(ConstantNames.Interpolation.Hash, hashedUser);
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            parameter = JsonConvert.DeserializeObject<UserParameterRequest>(content);
+            AbsoluteValue = Convert.ToDecimal(parameter.ReferenceAbsoluteValue.ToString("#.##0,00000000"));
+        }
+    }
+
+    private async Task LoadAnalysis()
+    {
+        var url = ConstantNames.ApiRoutes.Analysis.Replace(ConstantNames.Interpolation.Hash, hashedUser);
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            cryptoAnalysis = JsonConvert.DeserializeObject<List<AnalysisResponse>>(content);
+            SelectedMarket = cryptoAnalysis?.FirstOrDefault()?.MarketId ?? 0;
+        }
+    }
+
+    private async Task LoadSimulation()
+    {
+        if (SelectedMarket == 0)
+        {
+            return;
+        }
+
+        var url = ConstantNames.ApiRoutes.Simulation.Replace(ConstantNames.Interpolation.Hash, hashedUser).Replace(ConstantNames.Interpolation.MarketId, SelectedMarket.ToString());
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            simulation = JsonConvert.DeserializeObject<SimulationResponse>(content);
+        }
+    }
+
+    private async Task LoadLastUpdate()
+    {
+        var url = ConstantNames.ApiRoutes.CandlestickLastUpdate;
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            lastUpdate = JsonConvert.DeserializeObject<LastUpdateResponse>(content);
+        }
+    }
+
+    private async Task AtualizarIndices()
+    {
+        var url = ConstantNames.ApiRoutes.CandlestickUpdate;
+        var result = await Http.PostAsync(url, null);
+        if (result.IsSuccessStatusCode)
+        {
+            await LoadAnalysis();
+            await LoadSimulation();
+            await LoadLastUpdate();
+        }
+    }
+
+    private async Task ChangeSimulation(ChangeEventArgs e)
+    {
+        SelectedMarket = Convert.ToInt64(e.Value);
+        await LoadSimulation();
+    }
+
+    private async Task IniciarCircuitoUnico()
+    {
+        var url = ConstantNames.ApiRoutes.StartSingleCircuit.Replace(ConstantNames.Interpolation.Hash, hashedUser);
+        var result = await Http.PostAsync(url, null);
+        if (result.IsSuccessStatusCode)
+        {
+        }
+    }
+}

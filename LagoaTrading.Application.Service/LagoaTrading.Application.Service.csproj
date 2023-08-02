@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LagoaTrading.Application.EmailService\LagoaTrading.Application.EmailService.csproj" />
+    <ProjectReference Include="..\LagoaTrading.Domain\LagoaTrading.Domain.csproj" />
+    <ProjectReference Include="..\LagoaTrading\Shared\LagoaTrading.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

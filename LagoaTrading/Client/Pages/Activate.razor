@@ -1,0 +1,43 @@
+﻿@page "/activate/{hash}"
+@inject HttpClient Http
+@inject ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@layout PublicLayout
+
+<PageTitle>@messageNow</PageTitle>
+
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <h3>@messageNow</h3>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? hash { get; set; }
+
+    private string messageNow = "Ativando sua conta. Por favor, aguarde...";
+    private AuthorizationResponse response = new AuthorizationResponse();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var url = ConstantNames.ApiRoutes.ActivateUser.Replace(ConstantNames.Interpolation.Hash, hash);
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            response = JsonConvert.DeserializeObject<AuthorizationResponse>(content);
+        }
+
+        if (result.IsSuccessStatusCode && !string.IsNullOrEmpty(response.Token))
+        {
+            await localStorage.SetItemAsync<AuthorizationResponse>(ConstantNames.LocalStoreNames.AuthenticationToken, response);
+            StateHasChanged();
+            await Task.Delay(1000);
+            navigationManager.NavigateTo(ConstantNames.Routes.Dashboard);
+        }
+    }
+}

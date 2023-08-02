@@ -1,0 +1,51 @@
+﻿@if (Messages != null)
+{
+    if (Messages.ContainsKey(MessageType.Success) && Messages[MessageType.Success].Any())
+    {
+        <div class="alert alert-success" role="alert">
+            @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") <br />
+            @foreach (var message in Messages[MessageType.Success])
+            {
+                <span>@message</span>
+            }
+        </div>
+    }
+
+    if (Messages.ContainsKey(MessageType.Info) && Messages[MessageType.Info].Any())
+    {
+        <div class="alert alert-info" role="alert">
+            @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") <br />
+            @foreach (var message in Messages[MessageType.Info])
+            {
+                <span>@message</span>
+            }
+        </div>
+    }
+
+    if (Messages.ContainsKey(MessageType.Warning) && Messages[MessageType.Warning].Any())
+    {
+        <div class="alert alert-warning" role="alert">
+            @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") <br />
+            @foreach (var message in Messages[MessageType.Warning])
+            {
+                <span>@message</span>
+            }
+        </div>
+    }
+
+    if (Messages.ContainsKey(MessageType.Error) && Messages[MessageType.Error].Any())
+    {
+        <div class="alert alert-danger" role="alert">
+            @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") <br />
+            @foreach (var message in Messages[MessageType.Error])
+            {
+                <span>@message</span>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public Dictionary<MessageType, List<string>> Messages { get; set; } = new Dictionary<MessageType, List<string>>();
+}

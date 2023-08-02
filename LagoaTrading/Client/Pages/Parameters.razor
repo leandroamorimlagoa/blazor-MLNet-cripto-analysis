@@ -1,0 +1,135 @@
+﻿@page "/parameters"
+@inject HttpClient Http
+@inject AbstractLagoaTradingAuthStateProvider authStateProvider
+
+
+<PageTitle>Parametros</PageTitle>
+<h3>Parametros</h3>
+@*<h3 hidden="@(model.Hash != string.Empty)">Carregando...</h3>*@
+<div class="row justify-content-center" hidden="@HideForm">
+    <div class="col-md-4">
+        <form>
+            <fieldset>
+                <legend>Informações da conta</legend>
+                <div class="form-group my-2">
+                    <label for="apiKey">API Key:</label>
+                    <input type="text" class="form-control" id="apiKey" name="apiKey" @bind="model.ApiKey" />
+                </div>
+                <div class="form-group my-2">
+                    <label for="apiSecret">API Secret:</label>
+                    <input type="text" class="form-control" id="apiSecret" name="apiSecret" @bind="model.ApiSecret" />
+                </div>
+            </fieldset>
+            
+            <hr />
+
+            <fieldset>
+                <legend>Valores de referência para Investimentos</legend>
+                <div class="form-group my-2">
+                    <label for="TypeValue">Tipo de valor:</label>
+                    <InputSelect class="form-control" id="TypeValue" name="TypeValue" @bind-Value="@(model.TypeValue)">
+                        @foreach (var typeValue in Enum.GetValues(typeof(ParameterTypeValue)))
+                        {
+                            <option value="@typeValue">@typeValue</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="form-group my-2" hidden="@(model.TypeValue != ParameterTypeValue.Percentage)">
+                    <label for="ReferenceValue">Valor Percentual:</label>
+                    <InputNumber class="form-control" @bind-Value="model.ReferenceValue" />
+                </div>
+                <div class="form-group my-2">
+                    <label for="ReferenceAbsoluteValue">Valor Absoluto:</label>
+                    <InputNumber class="form-control" @bind-Value="model.ReferenceAbsoluteValue" />
+                </div>
+            </fieldset>
+
+            <hr />
+
+            <fieldset>
+                <legend>Como selecionar criptomoedas</legend>
+                <div class="form-group form-check my-2">
+                    <input type="checkbox" class="form-check-input" id="onlyPositiveCryptos" name="onlyPositiveCryptos" checked />
+                    <label class="form-check-label" for="onlyPositiveCryptos">Somente criptomoedas com valor positivo nas ultimas 24 horas</label>
+                </div>
+                <div class="form-group">
+                    <label for="MinimumCryptoValue my-2">Valor Mínimo:</label>
+                    <InputNumber class="form-control" @bind-Value="model.MinimumCryptoValue" />
+                </div>
+                <div class="form-group">
+                    <label for="MaximumCryptoValue my-2">Valor Máximo:</label>
+                    <InputNumber class="form-control" @bind-Value="model.MaximumCryptoValue" />
+                </div>
+            </fieldset>
+
+            <hr />
+
+            <fieldset>
+                <legend>Como investir (compra e venda)</legend>
+                <div class="form-group my-2">
+                    <label for="PercentageToDecreaseToBuy">Percentual de Redução para Compra:</label>
+                    <InputNumber class="form-control" @bind-Value="model.PercentageToDecreaseToBuy" />
+                </div>
+                <div class="form-group my-2">
+                    <label for="PercentageToIncreaseToSell">Percentual de Acréscimo para Venda:</label>
+                    <InputNumber class="form-control" @bind-Value="model.PercentageToIncreaseToSell" />
+                </div>
+            </fieldset>
+            <button type="button" class="btn btn-primary my-2 float-end" @onclick="Salvar">Salvar</button>
+        </form>
+    </div>
+</div>
+@code {
+    //TODO: Criar campo de valor do saldo em conta que será utilizado em integrações com a FOXBIT
+    // No campo Ao selecionar TypeValue == Percentage, o valor utilizado será o saldo da conta
+    // No campo Ao selecionar TypeValue == Absolute, o valor digitado não poderá ser maior que o valor de saldo da conta
+    private UserParameterRequest model = new UserParameterRequest();
+    private Message message = new Message();
+    private bool HideForm = true;
+    private string hashedUser = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hash = await authStateProvider.GetUserHash();
+        var key = CryptoHelper.CreateRandomKey();
+        hashedUser = CryptoHelper.Encrypt(hash, key) + key;
+        var url = ConstantNames.ApiRoutes.UserParameters.Replace(ConstantNames.Interpolation.Hash, hashedUser);
+        var result = await Http.GetAsync(url);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            model = JsonConvert.DeserializeObject<UserParameterRequest>(content);
+            if (model == null)
+            {
+                message.AddMessage(MessageType.Error, "Falha ao carregar os parametros do usuário. Tente novamente");
+                return;
+            }
+            var apiKey = model.GetApiKey();
+            var apiSecret = model.GetApiSecret();
+            model.ApiKey = apiKey;
+            model.ApiSecret = apiSecret;
+        }
+        HideForm = false;
+    }
+
+    private async Task Salvar()
+    {
+        var hash = await authStateProvider.GetUserHash();
+        var url = ConstantNames.ApiRoutes.UserParameters.Replace(ConstantNames.Interpolation.Hash, hashedUser);
+        var request = new UserParameterRequest(model.ApiKey, model.ApiSecret);
+        request.TypeValue = model.TypeValue;
+        request.ReferenceValue = model.ReferenceValue;
+        request.ReferenceAbsoluteValue = model.ReferenceAbsoluteValue;
+        request.OnlyPositiveCryptos = model.OnlyPositiveCryptos;
+        request.MinimumCryptoValue = model.MinimumCryptoValue;
+        request.MaximumCryptoValue = model.MaximumCryptoValue;
+        request.PercentageToDecreaseToBuy = model.PercentageToDecreaseToBuy;
+        request.PercentageToIncreaseToSell = model.PercentageToIncreaseToSell;
+        var result = await Http.PostAsJsonAsync(url, request);
+        if (!result.IsSuccessStatusCode)
+        {
+            message.AddMessage(MessageType.Error, "Erro ao gravar os parametros." + result?.ReasonPhrase);
+            return;
+        }
+    }
+}

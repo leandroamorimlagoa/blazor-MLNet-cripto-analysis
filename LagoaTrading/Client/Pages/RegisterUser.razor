@@ -1,0 +1,64 @@
+﻿@page "/register-user"
+@inject HttpClient Http
+@layout PublicLayout
+
+<PageTitle>New User</PageTitle>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-6" hidden="@(string.IsNullOrEmpty(response.Message))">
+            <div class="alert alert-success" role="alert">
+                <strong>@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")</strong> <br />
+                <span>@response.Message</span>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-8 col-sm-10" hidden="@(!string.IsNullOrEmpty(response.Message))">
+            <div class="card text-center shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title">Registrar novo usuário</h4>
+                </div>
+                <div class="card-body text-start">
+                    <div class="mb-3">
+                        <label for="userName" class="form-label">User Name</label>
+                        <input type="text" class="form-control" id="userName" @bind-value="model.UserName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" @bind-value="model.Password" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="apiSecret" class="form-label">Api Secret</label>
+                        <input type="text" class="form-control" id="apiSecret" @bind-value="model.ApiSecret" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="apiKey" class="form-label">Api Key</label>
+                        <input type="text" class="form-control" id="apiKey" @bind-value="model.ApiKey" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="inviteCode" class="form-label">Invite Code</label>
+                        <input type="text" class="form-control" id="inviteCode" @bind-value="model.InviteCode" required />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" @onclick="CreateUser">Registrar Usuário</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private NewUserRequest model = new NewUserRequest();
+    private NewUserResponse response = new NewUserResponse();
+
+    private async Task CreateUser()
+    {
+        var password = CryptoHelper.Create256(model.Password);
+        var newUser = new NewUserRequest(model.UserName, password, model.ApiSecret, model.ApiKey, model.InviteCode);
+        var json = JsonConvert.SerializeObject(newUser);
+        var result = await Http.PostAsJsonAsync(ConstantNames.ApiRoutes.NewUser, newUser);
+        if (result.IsSuccessStatusCode)
+        {
+            var content = await result.Content.ReadAsStringAsync();
+            response = JsonConvert.DeserializeObject<NewUserResponse>(content);
+        }
+    }
+}
