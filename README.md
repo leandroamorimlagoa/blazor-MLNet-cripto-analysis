@@ -2,8 +2,15 @@
 
 Application in Blazor .NET 7 with ML.NET 7 used to analyze and invest cryptocurrencies on the foxbit.com.br platform
 
+# DO NOT USE THIS APPLICATION TO INVEST IN CRYPTOCURRENCIES
+
 ## This is a proof of concept project
 The objective is to integrate with the foxbit.com.br platform to get Crypto stocks values and create buy and sell orders.
+This project is a proof of concept and is not intended to be used for actual trading.
+The code is not optimized for speed or accuracy.
+The code is not optimized for memory usage.
+The code is not optimized for security.
+The code is not optimized for anything.
 
 # Current Status
 Application is still in development, but you can already use it to analyze the price of cryptocurrencies and invest in them.
@@ -43,3 +50,8 @@ The application will only do a new investment when the previous cycle is finishe
 1. Open the solution in Visual Studio 2022
 1. Run the project
 1. Access the application in the browser at the address: `https://localhost:5001`
+
+# Credits
+Developer: Leandro Amorim Lagoa 
+Email: leamorim@outlook.com
+Linkeding: https://www.linkedin.com/in/leandrolagoa/
